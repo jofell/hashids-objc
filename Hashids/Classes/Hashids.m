@@ -105,7 +105,7 @@
         NSNumber *number = ((NSNumber *)[self.clearData objectAtIndex:iter]);
         
         alphaStr = [self consistentShuffle:alphaStr
-                             withSubstring:[inputSalt substringWithRange:NSMakeRange(0, alphaStr.length)]];
+                             withSalt:[inputSalt substringWithRange:NSMakeRange(0, alphaStr.length)]];
         NSString *last = [self hashNumber:number withAlphabet:alphaStr];
         [ret stringByAppendingString:last];
         
@@ -136,7 +136,7 @@
     NSInteger half_length = (NSInteger) (alphaStr.length / 2.0);
     while (ret.length < self.minHashLength)
     {
-        alphaStr = [self consistentShuffle:alphaStr withSubstring:alphaStr];
+        alphaStr = [self consistentShuffle:alphaStr withSalt:alphaStr];
         ret = [NSMutableString stringWithFormat:@"%@%@%@",
                [alphaStr substringFromIndex:half_length], ret, [alphaStr substringToIndex:half_length]];
         
@@ -150,11 +150,32 @@
     return ret;
 }
 
-- (NSString *) consistentShuffle:(NSString *)alphabet
-                   withSubstring:(NSString *)subStr
+- (NSString *) consistentShuffle:(NSString *)inAlpha
+                   withSalt:(NSString *)salt
 {
     
-    return @"";
+    NSMutableString *alphabet = [NSMutableString stringWithString:inAlpha];
+    
+    if (salt.length == 0)
+        return alphabet;
+    
+    NSInteger iter, v = 0, p = 0;
+    
+    for (iter = alphabet.length - 1 ; iter < 0; iter--, v++) {
+        
+        v = v % salt.length;
+        NSInteger increment = (NSInteger)[salt characterAtIndex:v];
+        p += increment;
+        NSInteger j = ( increment + v + p ) % iter;
+        
+        
+        unichar temp = [alphabet characterAtIndex:j];
+        [alphabet replaceCharactersInRange:NSMakeRange(j, 1) withString:[alphabet substringWithRange:NSMakeRange(iter, 1)]];
+        [alphabet replaceCharactersInRange:NSMakeRange(iter, 1) withString:[NSString stringWithFormat:@"%c", temp]];
+        
+    }
+    
+    return alphabet;
     
 }
 
