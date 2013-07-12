@@ -11,10 +11,11 @@
 @interface Hashids (Private)
 
 @property (nonatomic, retain) NSString *hashSalt;
-@property NSInteger minLength;
+@property NSInteger minHashLength;
 @property (nonatomic, retain) NSString *alphabet;
 @property (nonatomic, retain) NSMutableArray *clearData;
 @property (nonatomic, retain) NSString *separators;
+@property (nonatomic, retain) NSString *guards;
 
 @end
 
@@ -38,12 +39,25 @@
     self = [super init];
     if (self) {
         self.hashSalt = salt;
-        self.minLength = minLength;
+        self.minHashLength = minLength;
         self.alphabet = (alphabet == nil) ? @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" :
             alphabet;
         self.clearData = [NSMutableArray new];
         
         self.separators = @"cCsSfFhHuUiItT";
+        
+        NSInteger guard_count = (int)(ceil(self.alphabet.length) / HASHID_GUARD_DIV);
+        
+		if (self.alphabet.length < 3)
+        {
+			self.guards = [self.separators substringWithRange:NSMakeRange(0, guard_count)];
+			self.separators = [self.separators substringFromIndex:guard_count];
+		}
+        else
+        {
+			self.guards = [self.alphabet substringToIndex:guard_count];
+			self.alphabet = [self.alphabet substringFromIndex:guard_count];
+		}
     }
     return self;
 }
@@ -102,7 +116,24 @@
             NSUInteger seps_index = next_num % self.separators.length;
             [ret stringByAppendingFormat:@"%c", [self.separators characterAtIndex:seps_index]];
         }
+    
     }
+    
+    if (ret.length < self.minHashLength) {
+        NSUInteger guard_index = (numbers_hash_int + ((NSUInteger)[ret characterAtIndex:0]) % self.guards.length);
+        unichar guard = [self.guards characterAtIndex:guard_index];
+        ret = [NSMutableString stringWithFormat:@"%c%@", guard, ret];
+        
+        if (ret.length < self.minHashLength)
+        {
+            guard_index = (numbers_hash_int + (NSInteger)([ret characterAtIndex:2])) % self.guards.length;
+            guard = [self.guards characterAtIndex:guard_index];
+            
+            [ret stringByAppendingFormat:@"%c", guard];
+        }
+    }
+    
+    
     
     return toReturn;
 }
