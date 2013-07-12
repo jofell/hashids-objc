@@ -13,6 +13,9 @@
 #define HASHID_GUARD_DIV 12
 #define HASHID_MAX_INT_VALUE 1000000000
 
+@interface HashidsException : NSException
+@end
+
 @interface Hashids : NSObject
 
 - (id)initWithSalt:(NSString *) salt

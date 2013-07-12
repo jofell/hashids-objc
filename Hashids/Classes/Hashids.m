@@ -8,7 +8,7 @@
 
 #import "Hashids.h"
 
-@interface Hashids (Private)
+@interface Hashids ()
 
 @property (nonatomic, retain) NSString *hashSalt;
 @property NSInteger minHashLength;
@@ -19,7 +19,19 @@
 
 @end
 
+@implementation HashidsException
+@end
+
+
 @implementation Hashids
+
+@synthesize hashSalt;
+@synthesize minHashLength;
+@synthesize alphabet;
+@synthesize clearData;
+@synthesize separators;
+@synthesize guards;
+
 
 - (id)init
 {
@@ -34,18 +46,72 @@
 
 - (id)initWithSalt:(NSString *) salt
          minLength:(NSInteger) minLength
-          andAlpha:(NSString *) alphabet
+          andAlpha:(NSString *) inAlpha
 {
     self = [super init];
     if (self) {
-        self.hashSalt = salt;
-        self.minHashLength = minLength;
-        self.alphabet = (alphabet == nil) ? @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" :
-            alphabet;
+        
+        self.hashSalt = ((salt == nil) ? @"" : salt);
+        self.minHashLength = (minLength > 0) ? minLength : 0;
+        self.alphabet = (inAlpha == nil) ? @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" :
+            inAlpha;
         self.clearData = [NSMutableArray new];
         
         self.separators = @"cCsSfFhHuUiItT";
         
+        if (self.alphabet.length < HASHID_MIN_ALPHABET_LENGTH)
+            @throw [HashidsException exceptionWithName:@"HashidsAlphabetLengthException"
+                                                reason:[NSString stringWithFormat:@"Alphabet is too short, must be %d long", HASHID_MIN_ALPHABET_LENGTH]
+                                              userInfo:nil];
+        
+        if ([self.alphabet componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].count > 1)
+            @throw [HashidsException exceptionWithName:@"HashidsAlphabetSpaceException"
+                                                reason:[NSString stringWithFormat:@"Alphabet is not allowed to have whitespaces"]
+                                              userInfo:nil];
+        
+        // Get the intersection, separators prolly the lower set
+        NSMutableArray *intersections = [NSMutableArray array];
+        NSInteger charIter = 0;
+        for (; charIter < self.separators.length; charIter++)
+        {
+            NSString *currChar = [NSString stringWithFormat:@"%c", [self.separators characterAtIndex:charIter]];
+            NSString *tempStr = [self.alphabet stringByReplacingOccurrencesOfString:currChar withString:@""];
+            
+            if ( ![tempStr isEqualToString:self.alphabet] )
+            {
+                [intersections addObject:currChar];
+                self.alphabet = tempStr;
+            }
+        }
+        
+        [intersections sortedArrayUsingSelector:@selector(compare:)];
+        
+        self.separators = [self consistentShuffle:[intersections componentsJoinedByString:@""]
+                                         withSalt:self.hashSalt];
+        
+        // Check separator validity
+        if ( self.separators && self.separators.length > 0 && self.alphabet.length / self.separators.length > HASHID_SEP_DIV )
+        {
+            NSInteger seps_length = (NSInteger)ceil(self.alphabet.length / HASHID_SEP_DIV);
+            
+            if (seps_length == 1)
+                seps_length++;
+            
+            if (seps_length > self.separators.length)
+            {
+                NSInteger diff = seps_length - self.separators.length;
+                [self.separators stringByAppendingString:[self.alphabet substringToIndex:diff]];
+                self.alphabet = [self.alphabet substringFromIndex:diff];
+            }
+            else
+                self.separators = [self.separators substringToIndex:seps_length];
+        }
+        
+        
+        // Shuffle alphabet
+        self.alphabet = [self consistentShuffle:self.alphabet withSalt:self.hashSalt];
+        
+        // Set guards
         NSInteger guard_count = (int)(ceil(self.alphabet.length) / HASHID_GUARD_DIV);
         
 		if (self.alphabet.length < 3)
@@ -58,7 +124,10 @@
 			self.guards = [self.alphabet substringToIndex:guard_count];
 			self.alphabet = [self.alphabet substringFromIndex:guard_count];
 		}
+        
+        NSLog(@"\n%@\n%@\n%@\n", self.alphabet, self.separators, self.guards);
     }
+    
     return self;
 }
 
@@ -70,6 +139,7 @@
     va_start(args, firstEntry);
     
     NSNumber *arg = nil;
+    [self.clearData addObject:firstEntry];
     while ((arg = va_arg(args, NSNumber*)))
     {
         if((strcmp([arg objCType], @encode(int))) != 0 ||
@@ -80,7 +150,6 @@
     }
     
     va_end(args);
-    
     return (self.clearData > 0) ? [self encode] : nil;
  }
 
@@ -97,7 +166,7 @@
     }
     
     unichar lottery = [alphaStr characterAtIndex:(numbers_hash_int % self.alphabet.length)];
-    NSMutableString *ret = [NSString stringWithFormat:@"%c", lottery];
+    NSMutableString *ret = [NSMutableString stringWithFormat:@"%c", lottery];
     
     for (iter = 0; iter < self.clearData.count; iter++)
     {
@@ -107,7 +176,7 @@
         alphaStr = [self consistentShuffle:alphaStr
                              withSalt:[inputSalt substringWithRange:NSMakeRange(0, alphaStr.length)]];
         NSString *last = [self hashNumber:number withAlphabet:alphaStr];
-        [ret stringByAppendingString:last];
+        [ret appendString:last];
         
         if (iter + 1 < self.clearData.count)
         {
@@ -120,7 +189,7 @@
     
     if (ret.length < self.minHashLength)
     {
-        NSUInteger guard_index = (numbers_hash_int + ((NSUInteger)[ret characterAtIndex:0]) % self.guards.length);
+        NSUInteger guard_index = (numbers_hash_int + ((NSUInteger)[ret characterAtIndex:0])) % self.guards.length;
         unichar guard = [self.guards characterAtIndex:guard_index];
         ret = [NSMutableString stringWithFormat:@"%c%@", guard, ret];
         
@@ -154,14 +223,16 @@
                    withSalt:(NSString *)salt
 {
     
-    NSMutableString *alphabet = [NSMutableString stringWithString:inAlpha];
+    NSMutableString *alpha = [NSMutableString stringWithString:inAlpha];
+    
     
     if (salt.length == 0)
-        return alphabet;
+        return alpha;
+    
     
     NSInteger iter, v = 0, p = 0;
     
-    for (iter = alphabet.length - 1 ; iter < 0; iter--, v++)
+    for (iter = alpha.length - 1 ; iter > 0; iter--, v++)
     {
         
         v = v % salt.length;
@@ -170,13 +241,13 @@
         NSInteger j = ( increment + v + p ) % iter;
         
         
-        unichar temp = [alphabet characterAtIndex:j];
-        [alphabet replaceCharactersInRange:NSMakeRange(j, 1) withString:[alphabet substringWithRange:NSMakeRange(iter, 1)]];
-        [alphabet replaceCharactersInRange:NSMakeRange(iter, 1) withString:[NSString stringWithFormat:@"%c", temp]];
+        unichar temp = [alpha characterAtIndex:j];
+        [alpha replaceCharactersInRange:NSMakeRange(j, 1) withString:[alphabet substringWithRange:NSMakeRange(iter, 1)]];
+        [alpha replaceCharactersInRange:NSMakeRange(iter, 1) withString:[NSString stringWithFormat:@"%c", temp]];
         
     }
     
-    return alphabet;
+    return alpha;
     
 }
 
