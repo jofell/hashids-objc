@@ -161,7 +161,8 @@
     
     NSInteger iter, v = 0, p = 0;
     
-    for (iter = alphabet.length - 1 ; iter < 0; iter--, v++) {
+    for (iter = alphabet.length - 1 ; iter < 0; iter--, v++)
+    {
         
         v = v % salt.length;
         NSInteger increment = (NSInteger)[salt characterAtIndex:v];
@@ -181,7 +182,20 @@
 
 - (NSString *) hashNumber:(NSNumber *)numberIn withAlphabet:(NSString *)alphabet
 {
-    return @"";
+    NSMutableString *hashStr = [NSMutableString stringWithString:@""];
+    NSInteger alphabet_length = alphabet.length;
+    long input_val = numberIn.longValue;
+    
+    do
+    {
+        unichar to_prepend = [alphabet characterAtIndex:input_val % alphabet_length];
+        hashStr = [NSMutableString stringWithFormat:@"%c%@", to_prepend, hashStr];
+        
+        input_val = (long)(input_val / alphabet_length);
+        
+    } while (input_val);
+    
+    return hashStr;
 }
 
 - (NSArray *) decrypt:(NSString *) encoded
