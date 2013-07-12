@@ -9,6 +9,9 @@
 #import "Hashids.h"
 
 
+#pragma mark -
+#pragma mark Private properties for hashids class
+
 @interface Hashids ()
 
 @property (nonatomic, retain) NSString *hashSalt;
@@ -22,9 +25,34 @@
 
 @end
 
+#pragma mark -
+#pragma mark Exception class
+
 @implementation HashidsException
 @end
 
+#pragma mark -
+#pragma mark NSString category for Hashids
+
+@implementation NSMutableString (Hashids)
+
+- (NSString *) replaceIndex:(NSInteger)index withString:(NSString *)replaceString
+{
+    if (index > self.length || index < 0 || index + replaceString.length > self.length)
+        return nil;
+    
+    NSString *oldString = [self substringWithRange:NSMakeRange(index, 1)];
+    
+    [self replaceCharactersInRange:NSMakeRange(index, 1) withString:replaceString];
+    
+    return oldString;
+}
+
+@end
+
+
+#pragma mark -
+#pragma mark Implementation for Hashids class
 
 @implementation Hashids
 
@@ -61,76 +89,47 @@
         self.alphabet = (inAlpha == nil) ? @"xcS4F6h89aUbideAI7tkynuopqrXCgTE5GBKHLMjfRsz" :
             inAlpha;
         self.clearData = [NSMutableArray new];
+        self.separators = @"";
         
-        self.separators = @"cCsSfFhHuUiItT";
+        NSMutableString *mAlpha = [NSMutableString stringWithString:self.alphabet];
         
-        if (self.alphabet.length < HASHID_MIN_ALPHABET_LENGTH)
+        if ( self.alphabet.length < HASHID_MIN_ALPHABET_LENGTH )
             @throw [HashidsException exceptionWithName:@"HashidsAlphabetLengthException"
                                                 reason:[NSString stringWithFormat:@"Alphabet is too short, must be %d long", HASHID_MIN_ALPHABET_LENGTH]
                                               userInfo:nil];
         
-        if ([self.alphabet componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].count > 1)
+        if ( [self.alphabet componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].count > 1 )
             @throw [HashidsException exceptionWithName:@"HashidsAlphabetSpaceException"
                                                 reason:[NSString stringWithFormat:@"Alphabet is not allowed to have whitespaces"]
                                               userInfo:nil];
         
         // Get the intersection, separators prolly the lower set
-        NSMutableArray *intersections = [NSMutableArray array];
-        NSInteger charIter = 0;
-        for (; charIter < self.separators.length; charIter++)
+        for (NSNumber *prime in self.primes)
         {
-            NSString *currChar = [NSString stringWithFormat:@"%c", [self.separators characterAtIndex:charIter]];
-            NSString *tempStr = [self.alphabet stringByReplacingOccurrencesOfString:currChar withString:@""];
-            
-            if ( ![tempStr isEqualToString:self.alphabet] )
-            {
-                [intersections addObject:currChar];
-                self.alphabet = tempStr;
+            if (prime.intValue - 1 < mAlpha.length) {
+                NSString *resAlpha = [mAlpha replaceIndex:prime.intValue-1 withString:@" "];
+                self.separators = [self.separators stringByAppendingString:resAlpha];
             }
+            
         }
         
-        [intersections sortedArrayUsingSelector:@selector(compare:)];
+        self.alphabet = [mAlpha stringByReplacingOccurrencesOfString:@" " withString:@""];
         
-        self.separators = [self consistentShuffle:[intersections componentsJoinedByString:@""]
-                                         withSalt:self.hashSalt];
+        self.guards = @"";
         
-        // Check separator validity
-        if ( self.separators && self.separators.length > 0 && self.alphabet.length / self.separators.length > HASHID_SEP_DIV )
+        for (NSNumber *seps in @[@0, @4, @8, @12])
         {
-            NSInteger seps_length = (NSInteger)ceil(self.alphabet.length / HASHID_SEP_DIV);
-            
-            if (seps_length == 1)
-                seps_length++;
-            
-            if (seps_length > self.separators.length)
-            {
-                NSInteger diff = seps_length - self.separators.length;
-                [self.separators stringByAppendingString:[self.alphabet substringToIndex:diff]];
-                self.alphabet = [self.alphabet substringFromIndex:diff];
+            if (seps.intValue < self.separators.length) {
+                unichar guard = [self.separators characterAtIndex:seps.intValue];
+                self.guards = [self.guards stringByAppendingFormat:@"%c", guard];
             }
-            else
-                self.separators = [self.separators substringToIndex:seps_length];
+            
         }
-        
-        
-        // Shuffle alphabet
-        self.alphabet = [self consistentShuffle:self.alphabet withSalt:self.hashSalt];
-        
-        // Set guards
-        NSInteger guard_count = (int)(ceil(self.alphabet.length) / HASHID_GUARD_DIV);
-        
-		if (self.alphabet.length < 3)
-        {
-			self.guards = [self.separators substringWithRange:NSMakeRange(0, guard_count)];
-			self.separators = [self.separators substringFromIndex:guard_count];
-		}
-        else
-        {
-			self.guards = [self.alphabet substringToIndex:guard_count];
-			self.alphabet = [self.alphabet substringFromIndex:guard_count];
-		}
         
         NSLog(@"\n%@\n%@\n%@\n", self.alphabet, self.separators, self.guards);
+        self.alphabet = [self consistentShuffle:self.alphabet withSalt:self.hashSalt];
+        
+        
     }
     
     return self;
