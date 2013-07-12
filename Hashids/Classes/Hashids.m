@@ -73,6 +73,7 @@
 - (NSString *) encode
 {
     NSMutableString *toReturn = [NSMutableString new];
+    NSString *alphaStr = [NSString stringWithString:self.alphabet];
     long numbers_hash_int = 0;
     int iter = 0;
     
@@ -82,7 +83,41 @@
         numbers_hash_int += (number % (iter + 100));
     }
     
+    unichar lottery = [alphaStr characterAtIndex:(numbers_hash_int % self.alphabet.length)];
+    NSMutableString *ret = [NSString stringWithFormat:@"%c", lottery];
+    
+    for (iter = 0; iter < self.clearData.count; iter++)
+    {
+        NSString *inputSalt = [NSString stringWithFormat:@"%c%@%@", lottery, self.hashSalt, alphaStr];
+        NSNumber *number = ((NSNumber *)[self.clearData objectAtIndex:iter]);
+        
+        alphaStr = [self consistentShuffle:alphaStr
+                             withSubstring:[inputSalt substringWithRange:NSMakeRange(0, alphaStr.length)]];
+        NSString *last = [self hashNumber:number withAlphabet:alphaStr];
+        [ret stringByAppendingString:last];
+        
+        if (iter + 1 < self.clearData.count)
+        {
+            NSUInteger next_num = number.longValue % ((unsigned int)[last characterAtIndex:0]) + 1;
+            NSUInteger seps_index = next_num % self.separators.length;
+            [ret stringByAppendingFormat:@"%c", [self.separators characterAtIndex:seps_index]];
+        }
+    }
+    
     return toReturn;
+}
+
+- (NSString *) consistentShuffle:(NSString *)alphabet
+                   withSubstring:(NSString *)subStr
+{
+    
+    return @"";
+    
+}
+
+- (NSString *) hashNumber:(NSNumber *)numberIn withAlphabet:(NSString *)alphabet
+{
+    return @"";
 }
 
 - (NSArray *) decrypt:(NSString *) encoded
