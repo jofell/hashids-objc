@@ -8,6 +8,7 @@
 
 #import "Hashids.h"
 
+
 @interface Hashids ()
 
 @property (nonatomic, retain) NSString *hashSalt;
@@ -16,6 +17,8 @@
 @property (nonatomic, retain) NSMutableArray *clearData;
 @property (nonatomic, retain) NSString *separators;
 @property (nonatomic, retain) NSString *guards;
+
+@property (nonatomic, retain) NSArray *primes;
 
 @end
 
@@ -51,9 +54,11 @@
     self = [super init];
     if (self) {
         
+        self.primes = @[@2, @3, @5, @7, @11, @13, @17, @19, @23, @29, @31, @37, @41, @43];
+        
         self.hashSalt = ((salt == nil) ? @"" : salt);
         self.minHashLength = (minLength > 0) ? minLength : 0;
-        self.alphabet = (inAlpha == nil) ? @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" :
+        self.alphabet = (inAlpha == nil) ? @"xcS4F6h89aUbideAI7tkynuopqrXCgTE5GBKHLMjfRsz" :
             inAlpha;
         self.clearData = [NSMutableArray new];
         

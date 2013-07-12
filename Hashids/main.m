@@ -14,11 +14,11 @@ int main(int argc, const char * argv[])
 
     @autoreleasepool {
         
-        Hashids *test = [[Hashids alloc] initWithSalt:@"dmwqp9340hwdn2871e(&*_&@bihBI&T@^TG@O*&)"
-                                            minLength:8
-                                             andAlpha:@"9HJDEXY2ZT3AFUOSR5Q6CN4BMV7GL8PW"];
+        Hashids *test = [[Hashids alloc] initWithSalt:@"this is my salt"
+                                            minLength:0
+                                             andAlpha:nil];
         
-        NSLog(@"%@", [test encrypt:@245, nil]);
+        NSLog(@"%@", [test encrypt:@1, @2, @3, nil]);
         
         // insert code here...
         NSLog(@"Hello, World!");
