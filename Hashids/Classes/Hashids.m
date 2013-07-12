@@ -86,7 +86,6 @@
 
 - (NSString *) encode
 {
-    NSMutableString *toReturn = [NSMutableString new];
     NSString *alphaStr = [NSString stringWithString:self.alphabet];
     long numbers_hash_int = 0;
     int iter = 0;
@@ -119,7 +118,8 @@
     
     }
     
-    if (ret.length < self.minHashLength) {
+    if (ret.length < self.minHashLength)
+    {
         NSUInteger guard_index = (numbers_hash_int + ((NSUInteger)[ret characterAtIndex:0]) % self.guards.length);
         unichar guard = [self.guards characterAtIndex:guard_index];
         ret = [NSMutableString stringWithFormat:@"%c%@", guard, ret];
@@ -133,9 +133,21 @@
         }
     }
     
+    NSInteger half_length = (NSInteger) (alphaStr.length / 2.0);
+    while (ret.length < self.minHashLength)
+    {
+        alphaStr = [self consistentShuffle:alphaStr withSubstring:alphaStr];
+        ret = [NSMutableString stringWithFormat:@"%@%@%@",
+               [alphaStr substringFromIndex:half_length], ret, [alphaStr substringToIndex:half_length]];
+        
+        NSInteger excess = ret.length - self.minHashLength;
+        if (excess > 0)
+            ret = [NSMutableString stringWithString:
+                   [ret substringWithRange:NSMakeRange((NSInteger)(excess / 2), self.minHashLength)]];
+        
+    }
     
-    
-    return toReturn;
+    return ret;
 }
 
 - (NSString *) consistentShuffle:(NSString *)alphabet
