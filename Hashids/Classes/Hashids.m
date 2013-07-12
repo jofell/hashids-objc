@@ -72,7 +72,17 @@
 
 - (NSString *) encode
 {
+    NSMutableString *toReturn = [NSMutableString new];
+    long numbers_hash_int = 0;
+    int iter = 0;
     
+    for (iter = 0; iter < self.clearData.count; iter++)
+    {
+        long number = ((NSNumber *)[self.clearData objectAtIndex:iter]).longValue;
+        numbers_hash_int += (number % (iter + 100));
+    }
+    
+    return toReturn;
 }
 
 - (NSArray *) decrypt:(NSString *) encoded
