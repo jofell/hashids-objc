@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'Hashids' target in the 'Hashids' project
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+#endif
