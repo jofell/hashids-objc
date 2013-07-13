@@ -25,6 +25,27 @@
 
 @end
 
+#pragma -
+#pragma mark NSNumber's lottery value
+
+@interface NSNumber (Hashids)
+
+- (NSNumber *) lotteryValue;
+
+@end
+
+
+@implementation NSNumber (Hashids)
+
+- (NSNumber *) lotteryValue
+{
+    return [NSNumber numberWithLong:(self.longValue + 1) * 2];
+}
+
+@end
+
+
+
 #pragma mark -
 #pragma mark Exception class
 
@@ -127,8 +148,8 @@
             }
         }
         
-        NSLog(@"\n%@\n%@\n%@\n", self.alphabet, self.separators, self.guards);
         self.alphabet = [self consistentShuffle:self.alphabet withSalt:self.hashSalt];
+        NSLog(@"\n%@\n%@\n%@", self.alphabet, self.separators, self.guards);
         
     }
     
@@ -160,110 +181,102 @@
 - (NSString *) encode
 {
     NSString *alphaStr = [NSString stringWithString:self.alphabet];
-    long numbers_hash_int = 0;
-    int iter = 0;
     
-    for (iter = 0; iter < self.clearData.count; iter++)
-    {
-        long number = ((NSNumber *)[self.clearData objectAtIndex:iter]).longValue;
-        numbers_hash_int += (number % (iter + 100));
-    }
+    NSString *inSep = [self consistentShuffle:self.separators
+                                          withSalt:[self.clearData componentsJoinedByString:@""]];
     
-    unichar lottery = [alphaStr characterAtIndex:(numbers_hash_int % self.alphabet.length)];
-    NSMutableString *ret = [NSMutableString stringWithFormat:@"%c", lottery];
     
-    for (iter = 0; iter < self.clearData.count; iter++)
-    {
-        NSString *inputSalt = [NSString stringWithFormat:@"%c%@%@", lottery, self.hashSalt, alphaStr];
-        NSNumber *number = ((NSNumber *)[self.clearData objectAtIndex:iter]);
+    // For lottery salt, iterate on the string and append as you go
+    NSString *lotterySaltPre = [self.clearData componentsJoinedByString:@"-"];
+    NSString *lotterySaltSuf = [[self.clearData valueForKey:@"lotteryValue"] componentsJoinedByString:@"-"];
+    
+    NSString *newOrder = [self consistentShuffle:alphaStr
+                                        withSalt:[NSString stringWithFormat:@"%@-%@",
+                                                  lotterySaltPre, lotterySaltSuf]];
+    
+    unichar lotteryChar = [newOrder characterAtIndex:0];
+    NSString *hashed = [NSString stringWithFormat:@"%c", lotteryChar];
+    NSString *newAlpha = [alphaStr stringByReplacingOccurrencesOfString:hashed
+                                                             withString:@""];
+    newAlpha = [NSString stringWithFormat:@"%c%@", lotteryChar, alphaStr];
+    
+    NSInteger i = 0;
+    for (; i < self.clearData.count; i++) {
         
-        alphaStr = [self consistentShuffle:alphaStr
-                             withSalt:[inputSalt substringWithRange:NSMakeRange(0, alphaStr.length)]];
-        NSString *last = [self hashNumber:number withAlphabet:alphaStr];
-        [ret appendString:last];
+        NSNumber *value = [self.clearData objectAtIndex:i];
+        NSString *alpha_salt = [NSString stringWithFormat:@"%ld%@", ((long)lotteryChar) & 12345, self.hashSalt];
+        newAlpha = [self consistentShuffle:newAlpha withSalt:alpha_salt];
+        NSString *currHash = [self hashNumber:value withAlphabet:newAlpha];
+        hashed = [hashed stringByAppendingFormat:currHash];
         
-        if (iter + 1 < self.clearData.count)
-        {
-            NSUInteger next_num = number.longValue % ((unsigned int)[last characterAtIndex:0]) + 1;
-            NSUInteger seps_index = next_num % self.separators.length;
-            [ret stringByAppendingFormat:@"%c", [self.separators characterAtIndex:seps_index]];
-        }
-    
-    }
-    
-    if (ret.length < self.minHashLength)
-    {
-        NSUInteger guard_index = (numbers_hash_int + ((NSUInteger)[ret characterAtIndex:0])) % self.guards.length;
-        unichar guard = [self.guards characterAtIndex:guard_index];
-        ret = [NSMutableString stringWithFormat:@"%c%@", guard, ret];
-        
-        if (ret.length < self.minHashLength)
-        {
-            guard_index = (numbers_hash_int + (NSInteger)([ret characterAtIndex:2])) % self.guards.length;
-            guard = [self.guards characterAtIndex:guard_index];
-            
-            [ret stringByAppendingFormat:@"%c", guard];
+        if (i < self.clearData.count - 1) {
+            hashed = [hashed stringByAppendingFormat:@"%c",
+                      [inSep characterAtIndex:(value.intValue + i) % inSep.length]];
         }
     }
     
-    NSInteger half_length = (NSInteger) (alphaStr.length / 2.0);
-    while (ret.length < self.minHashLength)
-    {
-        alphaStr = [self consistentShuffle:alphaStr withSalt:alphaStr];
-        ret = [NSMutableString stringWithFormat:@"%@%@%@",
-               [alphaStr substringFromIndex:half_length], ret, [alphaStr substringToIndex:half_length]];
-        
-        NSInteger excess = ret.length - self.minHashLength;
-        if (excess > 0)
-            ret = [NSMutableString stringWithString:
-                   [ret substringWithRange:NSMakeRange((NSInteger)(excess / 2), self.minHashLength)]];
-        
-    }
-    
-    return ret;
+    return hashed;
 }
 
-- (NSString *) consistentShuffle:(NSString *)inAlpha
-                   withSalt:(NSString *)salt
+- (NSDictionary *) consistentShuffle:(NSString *)inAlpha
+                            withSalt:(NSString *)inSalt
 {
     
-    NSMutableString *alpha = [NSMutableString stringWithString:inAlpha];
+    NSString *salt = [NSString stringWithString:inSalt];
+    NSMutableString *alpha = [inAlpha mutableCopy];
     
+    NSString *toReturn = @"";
     
-    if (salt.length == 0)
-        return alpha;
+    NSMutableArray *sorting = [NSMutableArray arrayWithCapacity:inSalt.length];
+    NSInteger i;
     
+    for ( i = 0; i < salt.length; i++ )
+        [sorting addObject:[NSNumber numberWithInteger:(NSInteger)[salt characterAtIndex:i]]];
     
-    NSInteger iter, v = 0, p = 0;
+    NSInteger len_sorting = sorting.count;
     
-    for (iter = alpha.length - 1 ; iter > 0; iter--, v++)
+    if (len_sorting == 0) [sorting addObject:[NSNumber numberWithInteger:0]];
+    
+    for ( i = 0; i < len_sorting; i++ )
     {
+        BOOL add = YES;
+        NSInteger k;
+        for ( k = i; k < len_sorting + i - 1; k++ )
+        {
+            NSInteger diff = ((NSNumber *)[sorting objectAtIndex:((k+1) % len_sorting)]).intValue;
+            NSInteger toIns = (add ? ((NSNumber *)[sorting objectAtIndex:i]).intValue + diff + (k * i) : -1 * diff);
+            [sorting replaceObjectAtIndex:i withObject:[NSNumber numberWithInteger:toIns]];
+            add = !add;
+        }
         
-        v = v % salt.length;
-        NSInteger increment = (NSInteger)[salt characterAtIndex:v];
-        p += increment;
-        NSInteger j = ( increment + v + p ) % iter;
-        
-        
-        unichar temp = [alpha characterAtIndex:j];
-        [alpha replaceCharactersInRange:NSMakeRange(j, 1) withString:[alphabet substringWithRange:NSMakeRange(iter, 1)]];
-        [alpha replaceCharactersInRange:NSMakeRange(iter, 1) withString:[NSString stringWithFormat:@"%c", temp]];
+        int currSortval = ((NSNumber *)[sorting objectAtIndex:i]).intValue;
+        [sorting replaceObjectAtIndex:i withObject:[NSNumber numberWithInteger:abs(currSortval)]];
         
     }
     
-    return alpha;
+    i = -1;
+    
+    while ( alpha.length > 0 )
+    {
+        i = (i + 1) % len_sorting;
+        NSInteger pos = ((NSNumber *)[sorting objectAtIndex:i]).intValue % alpha.length;
+        toReturn = [toReturn stringByAppendingFormat:@"%c", [alpha characterAtIndex:pos]];
+        [alpha replaceIndex:pos withString:@""];
+    }
+    
+    return toReturn;
     
 }
 
-- (NSString *) hashNumber:(NSNumber *)numberIn withAlphabet:(NSString *)alphabet
+- (NSString *) hashNumber:(NSNumber *)numberIn withAlphabet:(NSString *)inAlpha
 {
     NSMutableString *hashStr = [NSMutableString stringWithString:@""];
-    NSInteger alphabet_length = alphabet.length;
+    NSInteger alphabet_length = inAlpha.length;
     long input_val = numberIn.longValue;
     
     do
     {
-        unichar to_prepend = [alphabet characterAtIndex:input_val % alphabet_length];
+        unichar to_prepend = [inAlpha characterAtIndex:input_val % alphabet_length];
         hashStr = [NSMutableString stringWithFormat:@"%c%@", to_prepend, hashStr];
         
         input_val = (long)(input_val / alphabet_length);

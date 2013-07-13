@@ -18,10 +18,7 @@ int main(int argc, const char * argv[])
                                             minLength:8
                                              andAlpha:nil];
         
-        //NSLog(@"%@", [test encrypt:@1, @2, @3, nil]);
-        
-        // insert code here...
-        NSLog(@"Hello, World!");
+        NSLog(@"%@", [test encrypt:@1, @2, @3, nil]);
         
     }
     return 0;
