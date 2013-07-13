@@ -122,13 +122,13 @@
             if (seps.intValue < self.separators.length) {
                 unichar guard = [self.separators characterAtIndex:seps.intValue];
                 self.guards = [self.guards stringByAppendingFormat:@"%c", guard];
+                self.separators = [self.separators stringByReplacingCharactersInRange:NSMakeRange(seps.intValue, 1)
+                                                                           withString:@""];
             }
-            
         }
         
         NSLog(@"\n%@\n%@\n%@\n", self.alphabet, self.separators, self.guards);
         self.alphabet = [self consistentShuffle:self.alphabet withSalt:self.hashSalt];
-        
         
     }
     
