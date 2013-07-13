@@ -34,25 +34,45 @@ Basic Usage
 -----------
 
 As soon as you add the class files onto your XCode Project, just import Hashids to your Objective-C Source Codes.
+
+```objectivec
     
     #import "Hashids.h"
     
+```
+
 Then create an instance of the `Hashids` class.
+
+```objectivec
     
     Hashids *hashid = [Hashids new];
     
+```
+
 To encrypt a single integer:
+
+```objectivec
     
     NSString *hash = [hashids encrypt:@123, nil]; // @"AjL"
     
+```
+
 Take note that as opposed to other hashids implmentations, you are to use an `NSNumber` instance as parameter for encryption. Also take note that the parameter is `nil` terminated, which means the `encrypt:` call can take an arbitrary number of parameters to it, like so:
+
+```objectivec
     
     NSString *hash = [hashids encrypt:@123, @456, @789, nil]; // @"qa9t96h7G"
     
+```
+
 To decrypt an NSString hash:
+
+```objectivec
     
     NSArray *ints = [hashids descrypt:@"qa9t96h7G"]; # @[ @123, @456, @789 ]
     
+```
+
 Note that this call only returns an instance of NSArray. This is to have a more consistent return value for this method.
 
 
