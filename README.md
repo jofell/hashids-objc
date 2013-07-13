@@ -69,7 +69,7 @@ To decrypt an NSString hash:
 
 ```objectivec
     
-    NSArray *ints = [hashids descrypt:@"qa9t96h7G"]; # @[ @123, @456, @789 ]
+    NSArray *ints = [hashids descrypt:@"qa9t96h7G"]; // @[ @123, @456, @789 ]
     
 ```
 
