@@ -61,31 +61,37 @@ Customising Hashes
 
 Hashids supports personalizing your hashes by accepting a salt value, a minimum hash length, and a custom alphabet. Here is how you can customise your hashes:
 
+```objectivec
     
     Hashids *hasher = [[Hashids alloc] initWithSalt:@"this is my salt"
                                           minLength:8
                                            andAlpha:myAlpha];
-                                     
+                                           
+```                                     
 
 In general, you can customise your hashes by providing any of the three parameters stated above. Salts and alphabets are `nil`, while hash lengths have a minimum of 0 by default, i.e. when you allocate `Hashids` instances via `new` or `init`. Below are examples to customise solely on these three parameters
 
 ### Custom Salt Only ###
 
+```objectivec
     
     Hashids *hasher = [[Hashids alloc] initWithSalt:@"this is my salt 1"
                                           minLength:0
                                            andAlpha:nil];
     [hasher encrypt:@123]; // @"rnR"
                                          
+```
 
 The generated hash changes whenever the salt is changed.
 
+```objectivec
     
     Hashids *hasher = [[Hashids alloc] initWithSalt:@"this is my salt 2"
                                           minLength:0
                                            andAlpha:nil];
     [hasher encrypt:@123]; // @"XBn"
                                      
+```
 
 A salt string between 6 and 32 characters provides decent randomization.
 
@@ -95,12 +101,14 @@ By default, hashes are going to be the shortest possible. One reason you might w
 
 This is done by passing the minimum hash length to the `init` call. Hashes are padded with extra characters to make them seem longer.
 
+```objectivec
     
     Hashids *hasher = [[Hashids alloc] initWithSalt:nil
                                           minLength:16
                                            andAlpha:nil];
     [hasher encrypt:@1]; // @"Ee7uE4iyEiEG7ued"
                                             
+```
 
 ### Custom Alphabet Only ###
 
@@ -108,12 +116,14 @@ It’s possible to set a custom alphabet for your hashes. The default alphabet i
 
 To have only lowercase letters in your hashes, pass in the following custom alphabet:
 
+```objectivec
     
     Hashids *hasher = [[Hashids alloc] initWithSalt:nil
                                           minLength:0
                                            andAlpha:@"abcdefghijklmnopqrstuvwxyz"];
     [hasher encrypt:@123456789]; // @"dpovunuo" 
      
+```
 
 $#!7 Stuff
 ----------
