@@ -25,7 +25,8 @@
 
 @end
 
-#pragma -
+
+#pragma mark -
 #pragma mark NSNumber's lottery value
 
 @interface NSNumber (Hashids)
@@ -84,6 +85,8 @@
 @synthesize separators;
 @synthesize guards;
 
+#pragma mark -
+#pragma mark Init functions
 
 - (id)init
 {
@@ -116,12 +119,16 @@
         
         if ( self.alphabet.length < HASHID_MIN_ALPHABET_LENGTH )
             @throw [HashidsException exceptionWithName:@"HashidsAlphabetLengthException"
-                                                reason:[NSString stringWithFormat:@"Alphabet is too short, must be %d long", HASHID_MIN_ALPHABET_LENGTH]
+                                                reason:[NSString stringWithFormat:
+                                                        @"Alphabet is too short, must be %d long",
+                                                        HASHID_MIN_ALPHABET_LENGTH]
                                               userInfo:nil];
         
-        if ( [self.alphabet componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].count > 1 )
+        if ( [self.alphabet componentsSeparatedByCharactersInSet:
+                                [NSCharacterSet whitespaceAndNewlineCharacterSet]].count > 1 )
             @throw [HashidsException exceptionWithName:@"HashidsAlphabetSpaceException"
-                                                reason:[NSString stringWithFormat:@"Alphabet is not allowed to have whitespaces"]
+                                                reason:[NSString stringWithFormat:
+                                                        @"Alphabet is not allowed to have whitespaces"]
                                               userInfo:nil];
         
         // Get the intersection, separators prolly the lower set
@@ -154,6 +161,9 @@
     
     return self;
 }
+
+#pragma mark -
+#pragma mark Ecrypt functions
 
 - (NSString *) encrypt:(NSNumber *)firstEntry, ... NS_REQUIRES_NIL_TERMINATION
 {
@@ -249,6 +259,7 @@
     NSInteger len_sorting = sorting.count;
     
     if (len_sorting == 0) [sorting addObject:[NSNumber numberWithInteger:0]];
+    len_sorting = sorting.count;
     
     for ( i = 0; i < len_sorting; i++ )
     {
@@ -298,7 +309,9 @@
             sum += ((NSNumber *)[self.clearData objectAtIndex:i]).intValue * (i + 1);
         
         NSInteger guard_index = sum % self.guards.length;
-        hashid = [NSString stringWithFormat:@"%c%@", [self.guards characterAtIndex:guard_index], hashid];
+        hashid = [NSString stringWithFormat:@"%c%@",
+                                            [self.guards characterAtIndex:guard_index],
+                                            hashid];
         hashLength++;
         
         if (hashLength < length)
@@ -313,10 +326,15 @@
     
     while (hashLength < length)
     {
-        NSArray *pad = @[ @((NSInteger)[inAlpha characterAtIndex:1]), @((NSInteger)[inAlpha characterAtIndex:0])] ;
+        NSArray *pad = @[ @((NSInteger)[inAlpha characterAtIndex:1]),
+                          @((NSInteger)[inAlpha characterAtIndex:0])] ;
         
-        NSString *padLeft = [[self encodeValues:pad withAlpha:inAlpha andSalt:salt] objectAtIndex:0];
-        NSString *padRight = [[self encodeValues:pad withAlpha:inAlpha andSalt:[pad componentsJoinedByString:@""]] objectAtIndex:0];
+        NSString *padLeft = [[self encodeValues:pad
+                                      withAlpha:inAlpha
+                                        andSalt:salt] objectAtIndex:0];
+        NSString *padRight = [[self encodeValues:pad
+                                       withAlpha:inAlpha
+                                         andSalt:[pad componentsJoinedByString:@""]] objectAtIndex:0];
         
         hashid = [NSString stringWithFormat:@"%@%@%@", padLeft, hashid, padRight];
         hashLength = hashid.length;
@@ -351,6 +369,9 @@
     
     return hashStr;
 }
+
+#pragma mark -
+#pragma mark Decrypt functions
 
 - (NSArray *) decrypt:(NSString *) encoded
 {
