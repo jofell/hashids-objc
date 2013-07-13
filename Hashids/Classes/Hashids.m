@@ -133,7 +133,6 @@
             }
             
         }
-        
         self.alphabet = [mAlpha stringByReplacingOccurrencesOfString:@" " withString:@""];
         
         self.guards = @"";
@@ -279,16 +278,17 @@
     {
         BOOL add = YES;
         NSInteger k;
-        for ( k = i; k < len_sorting + i - 1; k++ )
+        for ( k = i; k < (len_sorting + i - 1); k++ )
         {
             NSInteger diff = ((NSNumber *)[sorting objectAtIndex:((k+1) % len_sorting)]).intValue;
-            NSInteger toIns = (add ? ((NSNumber *)[sorting objectAtIndex:i]).intValue + diff + (k * i) : -1 * diff);
+            NSInteger toIns = (((NSNumber *)[sorting objectAtIndex:i]).intValue) - diff;
+            if (add) toIns = ((NSNumber *)[sorting objectAtIndex:i]).intValue + diff + (k * i);
             [sorting replaceObjectAtIndex:i withObject:[NSNumber numberWithInteger:toIns]];
             add = !add;
         }
         
         int currSortval = ((NSNumber *)[sorting objectAtIndex:i]).intValue;
-        [sorting replaceObjectAtIndex:i withObject:[NSNumber numberWithInteger:abs(currSortval)]];
+        [sorting replaceObjectAtIndex:i withObject:@(abs(currSortval))];
         
     }
     
