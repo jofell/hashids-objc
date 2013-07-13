@@ -183,7 +183,7 @@
     
     return [self ensureLength:[retVal objectAtIndex:0]
                    withValues:self.clearData
-                  andAlphabet:[retVal objectAtIndex:0]];
+                  andAlphabet:[retVal objectAtIndex:1]];
  }
 
 - (NSArray *) encodeValues:(NSArray *)values
@@ -228,31 +228,6 @@
         }
     }
     return @[hashed, newAlpha];
-    
-}
-
-- (NSString *) reorder:(NSString *)inAlpha
-              withSalt:(NSString *)salt {
-    
-    NSMutableString *alpha = [NSMutableString stringWithString:inAlpha];
-    if (salt.length == 0)
-        return alpha;
-
-    NSInteger iter, v = 0, p = 0;
-    for (iter = alpha.length - 1 ; iter > 0; iter--, v++)
-    {
-        v = v % salt.length;
-        NSInteger increment = (NSInteger)[salt characterAtIndex:v];
-        p += increment;
-        NSInteger j = ( increment + v + p ) % iter;
-        
-        
-        unichar temp = [alpha characterAtIndex:j];
-        [alpha replaceCharactersInRange:NSMakeRange(j, 1) withString:[alphabet substringWithRange:NSMakeRange(iter, 1)]];
-        [alpha replaceCharactersInRange:NSMakeRange(iter, 1) withString:[NSString stringWithFormat:@"%c", temp]];
-
-    }
-    return alpha;
     
 }
 
