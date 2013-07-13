@@ -15,7 +15,7 @@ int main(int argc, const char * argv[])
     @autoreleasepool {
         
         Hashids *test = [[Hashids alloc] initWithSalt:@"this is my salt"
-                                            minLength:8
+                                            minLength:0
                                              andAlpha:nil];
         
         NSLog(@"%@", [test encrypt:@1, @2, @3, nil]);
