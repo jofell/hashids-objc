@@ -23,7 +23,7 @@ Installation
 
 You can install Hashids for Objective-C by downloading the files from the repository at [http://www.github.com/jofell/hashids-objc](http://www.github.com/jofell/hashids-objc). You can do either of the following:
 
-* Download the zipped archive of the repository (check out the "Download as Zip" button on the roght sidebar)
+* Download the zipped archive of the repository (check out the "Download as Zip" button on the right sidebar)
 * Clone the repository by running:
 
     git clone https://github.com/jofell/hashids-objc.git
