@@ -126,7 +126,7 @@ Therefore, the algorithm tries to avoid generating most common English curse wor
 Collisions
 ----------
 
-here are no collisions. Your generated hashes should be unique.
+There are no collisions. Your generated hashes should be unique.
 
 Decryptable Hash ¿qué?
 ----------------------
