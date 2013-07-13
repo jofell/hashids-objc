@@ -175,20 +175,32 @@
     }
     
     va_end(args);
-    return (self.clearData > 0) ? [self encode] : nil;
+    
+    if (self.clearData.count == 0) return nil;
+    
+    NSArray *retVal = [self encodeValues:self.clearData
+                               withAlpha:self.alphabet
+                                 andSalt:self.hashSalt];
+    
+    
+    return [self ensureLength:[retVal objectAtIndex:0]
+                   withValues:self.clearData
+                  andAlphabet:[retVal objectAtIndex:0]];
  }
 
-- (NSString *) encode
+- (NSArray *) encodeValues:(NSArray *)values
+                  withAlpha:(NSString *)inAlpha
+                    andSalt:(NSString *)inSalt
 {
-    NSString *alphaStr = [NSString stringWithString:self.alphabet];
+    NSString *alphaStr = [NSString stringWithString:inAlpha];
     
     NSString *inSep = [self consistentShuffle:self.separators
-                                          withSalt:[self.clearData componentsJoinedByString:@""]];
+                                     withSalt:[values componentsJoinedByString:@""]];
     
     
     // For lottery salt, iterate on the string and append as you go
-    NSString *lotterySaltPre = [self.clearData componentsJoinedByString:@"-"];
-    NSString *lotterySaltSuf = [[self.clearData valueForKey:@"lotteryValue"] componentsJoinedByString:@"-"];
+    NSString *lotterySaltPre = [values componentsJoinedByString:@"-"];
+    NSString *lotterySaltSuf = [[values valueForKey:@"lotteryValue"] componentsJoinedByString:@"-"];
     
     NSString *newOrder = [self consistentShuffle:alphaStr
                                         withSalt:[NSString stringWithFormat:@"%@-%@",
@@ -201,25 +213,51 @@
     newAlpha = [NSString stringWithFormat:@"%c%@", lotteryChar, alphaStr];
     
     NSInteger i = 0;
-    for (; i < self.clearData.count; i++) {
+    for (; i < values.count; i++) {
         
-        NSNumber *value = [self.clearData objectAtIndex:i];
-        NSString *alpha_salt = [NSString stringWithFormat:@"%ld%@", ((long)lotteryChar) & 12345, self.hashSalt];
+        NSNumber *value = [values objectAtIndex:i];
+        NSString *alpha_salt = [NSString stringWithFormat:@"%ld%@", ((long)lotteryChar) & 12345, inSalt];
         newAlpha = [self consistentShuffle:newAlpha withSalt:alpha_salt];
         NSString *currHash = [self hashNumber:value withAlphabet:newAlpha];
-        hashed = [hashed stringByAppendingFormat:currHash];
+        hashed = [hashed stringByAppendingString:currHash];
         
-        if (i < self.clearData.count - 1) {
+        if (i < values.count - 1) {
             hashed = [hashed stringByAppendingFormat:@"%c",
                       [inSep characterAtIndex:(value.intValue + i) % inSep.length]];
         }
     }
     
-    return hashed;
+    return @[hashed, newAlpha];
+    
 }
 
-- (NSDictionary *) consistentShuffle:(NSString *)inAlpha
-                            withSalt:(NSString *)inSalt
+- (NSString *) reorder:(NSString *)inAlpha
+              withSalt:(NSString *)salt {
+    
+    NSMutableString *alpha = [NSMutableString stringWithString:inAlpha];
+    if (salt.length == 0)
+        return alpha;
+
+    NSInteger iter, v = 0, p = 0;
+    for (iter = alpha.length - 1 ; iter > 0; iter--, v++)
+    {
+        v = v % salt.length;
+        NSInteger increment = (NSInteger)[salt characterAtIndex:v];
+        p += increment;
+        NSInteger j = ( increment + v + p ) % iter;
+        
+        
+        unichar temp = [alpha characterAtIndex:j];
+        [alpha replaceCharactersInRange:NSMakeRange(j, 1) withString:[alphabet substringWithRange:NSMakeRange(iter, 1)]];
+        [alpha replaceCharactersInRange:NSMakeRange(iter, 1) withString:[NSString stringWithFormat:@"%c", temp]];
+
+    }
+    return alpha;
+    
+}
+
+- (NSString *) consistentShuffle:(NSString *)inAlpha
+                   withSalt:(NSString *)inSalt
 {
     
     NSString *salt = [NSString stringWithString:inSalt];
@@ -266,6 +304,58 @@
     
     return toReturn;
     
+}
+
+- (NSString *) ensureLength:(NSString *)hashid
+                 withValues:(NSArray *)values
+                andAlphabet:(NSString *)inAlpha
+{
+    NSInteger length = self.minHashLength;
+    NSString *salt = [NSString stringWithString:self.hashSalt];
+    NSInteger hashLength = hashid.length;
+    
+    
+    if (hashLength < length)
+    {
+        NSInteger i = 0, sum = 0;
+        for (; i < self.clearData.count; i++)
+            sum += ((NSNumber *)[self.clearData objectAtIndex:i]).intValue * (i + 1);
+        
+        NSInteger guard_index = sum % self.guards.length;
+        hashid = [NSString stringWithFormat:@"%c%@", [self.guards characterAtIndex:guard_index], hashid];
+        hashLength++;
+        
+        if (hashLength < length)
+        {
+            hashid = [hashid stringByAppendingFormat:@"%c",
+                      [guards characterAtIndex:(guard_index + hashLength) % guards.length]];
+            hashLength++;
+        }
+            
+    }
+    
+    
+    while (hashLength < length)
+    {
+        NSArray *pad = @[ @((NSInteger)[inAlpha characterAtIndex:1]), @((NSInteger)[inAlpha characterAtIndex:0])] ;
+        
+        NSString *padLeft = [[self encodeValues:pad withAlpha:inAlpha andSalt:salt] objectAtIndex:0];
+        NSString *padRight = [[self encodeValues:pad withAlpha:inAlpha andSalt:[pad componentsJoinedByString:@""]] objectAtIndex:0];
+        
+        hashid = [NSString stringWithFormat:@"%@%@%@", padLeft, hashid, padRight];
+        hashLength = hashid.length;
+        NSInteger excess = hashLength - length;
+        if (excess > 0)
+        {
+            hashid = [hashid substringFromIndex:(NSInteger)(excess / 2)];
+            hashid =[hashid substringToIndex:hashid.length - (NSInteger)(excess / 2)];
+        }
+        
+        inAlpha = [self consistentShuffle:inAlpha withSalt:[salt stringByAppendingString:hashid]];
+        
+    }
+    
+    return hashid;
 }
 
 - (NSString *) hashNumber:(NSNumber *)numberIn withAlphabet:(NSString *)inAlpha
