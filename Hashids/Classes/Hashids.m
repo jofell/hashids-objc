@@ -375,12 +375,60 @@
 
 - (NSArray *) decrypt:(NSString *) encoded
 {
-    NSArray *toReturn = nil;
+    if (encoded == nil || encoded.length == 0)
+        return nil;
     
-    
-    
-    return toReturn;
+    return [self decode:encoded];
 }
 
+
+- (NSArray *) decode:(NSString *) encoded
+{
+    NSArray *parts = [encoded componentsSeparatedByCharactersInSet:
+                      [NSCharacterSet characterSetWithCharactersInString:self.guards]];
+    NSString *hashid = nil;
+    if (parts.count == 2 || parts.count == 3)
+        hashid = [parts objectAtIndex:1];
+    else
+        hashid = [parts objectAtIndex:0];
+    
+    unichar lottery_char = 0;
+    
+    NSArray *hash_parts = [hashid componentsSeparatedByCharactersInSet:
+                           [NSCharacterSet characterSetWithCharactersInString:self.separators]];
+    
+    NSInteger i = 0;
+    NSString *inAlpha = nil;
+    
+    NSMutableArray *results = [NSMutableArray arrayWithCapacity:hash_parts.count];
+    
+    for (; i < hash_parts.count; i++) {
+        NSString *subhash = [hash_parts objectAtIndex:i];
+        if (i == 0)
+        {
+            lottery_char = [hashid characterAtIndex:0];
+            subhash = [subhash substringFromIndex:1];
+            inAlpha = [NSString stringWithFormat:@"%c%@", lottery_char,
+                        [self.alphabet stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@"%c", lottery_char]
+                                                                 withString:@""]];
+        }
+        
+        if (lottery_char && inAlpha != nil && inAlpha.length > 0)
+        {
+            NSString *salt = [NSString stringWithFormat:@"%d%@", lottery_char & 12345, self.hashSalt];
+            inAlpha = [self consistentShuffle:inAlpha withSalt:salt];
+            [results addObject:[self unhash:subhash withAlpha:inAlpha]];
+        }
+        
+    }
+    
+    return results;
+}
+
+- (NSNumber *) unhash:(NSString *)currHash
+            withAlpha:(NSString *)inAlpha
+{
+    return @0;
+}
 
 @end
