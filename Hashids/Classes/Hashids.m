@@ -98,6 +98,33 @@
 #pragma mark -
 #pragma mark Init functions
 
+
++ (id)hashidWithSalt:(NSString *) salt
+{
+    return [[Hashids alloc] initWithSalt:salt
+                               minLength:0
+                                andAlpha:nil];
+}
+
++ (id)hashidWithSalt:(NSString *) salt
+        andMinLength:(NSInteger)minLength
+{
+    return [[Hashids alloc] initWithSalt:salt
+                               minLength:minLength
+                                andAlpha:nil];
+}
+
++ (id)hashidWithSalt:(NSString *) salt
+           minLength:(NSInteger) minLength
+            andAlpha:(NSString *) alphabet
+{
+    return [[Hashids alloc] initWithSalt:salt
+                               minLength:minLength
+                                andAlpha:alphabet];
+}
+
+
+
 - (id)init
 {
     self = [[Hashids alloc] initWithSalt:nil

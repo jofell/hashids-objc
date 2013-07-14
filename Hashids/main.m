@@ -14,14 +14,22 @@ int main(int argc, const char * argv[])
 
     @autoreleasepool {
         
-        Hashids *test = [[Hashids alloc] initWithSalt:nil
-                                            minLength:0
-                                             andAlpha:nil];
+        Hashids *hashids = [Hashids hashidWithSalt:@"this is my salt"];
         
-        NSString *hashed = [test encrypt:@123456789, nil];
-        NSLog(@"%@", hashed);
+        NSString *hash = [hashids encrypt:@1, @2, @3, nil];
+        NSLog(@"%@", hash);
+        NSLog(@"%@", [hashids decrypt:hash]);
         
-        NSLog(@"%@", [test decrypt:hashed]);
+        /*
+         Output: 
+         eGtrS8
+         (
+             1,
+             2,
+             3
+         )
+
+         */
         
     }
     return 0;

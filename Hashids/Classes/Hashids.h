@@ -24,6 +24,15 @@
 
 @interface Hashids : NSObject
 
++ (id)hashidWithSalt:(NSString *) salt;
+
++ (id)hashidWithSalt:(NSString *) salt
+        andMinLength:(NSInteger)minLength;
+
++ (id)hashidWithSalt:(NSString *) salt
+           minLength:(NSInteger) minLength
+            andAlpha:(NSString *) alphabet;
+
 - (id)initWithSalt:(NSString *) salt
          minLength:(NSInteger) minLength
           andAlpha:(NSString *) alphabet;
