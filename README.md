@@ -69,7 +69,7 @@ To decrypt an NSString hash:
 
 ```objectivec
     
-    NSArray *ints = [hashids descrypt:@"qa9t96h7G"]; // @[ @123, @456, @789 ]
+    NSArray *ints = [hashids decrypt:@"qa9t96h7G"]; // @[ @123, @456, @789 ]
     
 ```
 
@@ -91,14 +91,12 @@ Hashids supports personalizing your hashes by accepting a salt value, a minimum 
 
 In general, you can customise your hashes by providing any of the three parameters stated above. Salts and alphabets are `nil`, while hash lengths have a minimum of 0 by default, i.e. when you allocate `Hashids` instances via `new` or `init`. Below are examples to customise solely on these three parameters
 
-### Custom Salt Only ###
+### Using Custom Salt ###
 
 ```objectivec
     
-    Hashids *hasher = [[Hashids alloc] initWithSalt:@"this is my salt 1"
-                                          minLength:0
-                                           andAlpha:nil];
-    [hasher encrypt:@123]; // @"rnR"
+    Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt 1"];
+    [hasher encrypt:@123, nil]; // @"rnR"
                                          
 ```
 
@@ -106,16 +104,14 @@ The generated hash changes whenever the salt is changed.
 
 ```objectivec
     
-    Hashids *hasher = [[Hashids alloc] initWithSalt:@"this is my salt 2"
-                                          minLength:0
-                                           andAlpha:nil];
-    [hasher encrypt:@123]; // @"XBn"
+    Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt 2"];
+    [hasher encrypt:@123, nil]; // @"XBn"
                                      
 ```
 
 A salt string between 6 and 32 characters provides decent randomization.
 
-### Custom Minimum Hash Length Only ###
+### Controlling Hash Length ###
 
 By default, hashes are going to be the shortest possible. One reason you might want to increase the hash length is to obfuscate how large the integer behind the hash is.
 
@@ -123,14 +119,13 @@ This is done by passing the minimum hash length to the `init` call. Hashes are p
 
 ```objectivec
     
-    Hashids *hasher = [[Hashids alloc] initWithSalt:nil
-                                          minLength:16
-                                           andAlpha:nil];
-    [hasher encrypt:@1]; // @"Ee7uE4iyEiEG7ued"
+    Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt" 
+                                 andMinLength:16];
+    [hasher encrypt:@1, nil]; // @"AA6Fb9iLXiAaBFB5"
                                             
 ```
 
-### Custom Alphabet Only ###
+### Using Custom Alphabet ###
 
 It’s possible to set a custom alphabet for your hashes. The default alphabet is `@"xcS4F6h89aUbideAI7tkynuopqrXCgTE5GBKHLMjfRsz"`.
 
@@ -138,10 +133,10 @@ To have only lowercase letters in your hashes, pass in the following custom alph
 
 ```objectivec
     
-    Hashids *hasher = [[Hashids alloc] initWithSalt:nil
-                                          minLength:0
-                                           andAlpha:@"abcdefghijklmnopqrstuvwxyz"];
-    [hasher encrypt:@123456789]; // @"dpovunuo" 
+    Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt" 
+                                    minLength:16
+                                     andAlpha:@"abcdefghijklmnopqrstuvwxyz"];
+    [hasher encrypt:@123456789, nil]; // @"zdrnoaor"
      
 ```
 
