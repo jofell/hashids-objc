@@ -16,9 +16,12 @@ int main(int argc, const char * argv[])
         
         Hashids *test = [[Hashids alloc] initWithSalt:nil
                                             minLength:0
-                                             andAlpha:@"abcdefghijklmnopqrstuvwxyz"];
+                                             andAlpha:nil];
         
-        NSLog(@"%@", [test encrypt:@123456789, nil]);
+        NSString *hashed = [test encrypt:@123456789, nil];
+        NSLog(@"%@", hashed);
+        
+        NSLog(@"%@", [test decrypt:hashed]);
         
     }
     return 0;

@@ -72,7 +72,17 @@
 
 @end
 
+@implementation NSString (Haashids)
 
+-(NSUInteger) indexOf:(char) searchChar {
+    NSRange searchRange;
+    searchRange.location=(unsigned int)searchChar;
+    searchRange.length=1;
+    NSRange foundRange = [self rangeOfCharacterFromSet:[NSCharacterSet characterSetWithRange:searchRange]];
+    return foundRange.location;
+}
+
+@end
 #pragma mark -
 #pragma mark Implementation for Hashids class
 
@@ -155,7 +165,6 @@
         }
         
         self.alphabet = [self consistentShuffle:self.alphabet withSalt:self.hashSalt];
-        NSLog(@"\n%@\n%@\n%@", self.alphabet, self.separators, self.guards);
         
     }
     
@@ -415,7 +424,7 @@
         
         if (lottery_char && inAlpha != nil && inAlpha.length > 0)
         {
-            NSString *salt = [NSString stringWithFormat:@"%d%@", lottery_char & 12345, self.hashSalt];
+            NSString *salt = [NSString stringWithFormat:@"%d%@", (lottery_char & 12345), self.hashSalt];
             inAlpha = [self consistentShuffle:inAlpha withSalt:salt];
             [results addObject:[self unhash:subhash withAlpha:inAlpha]];
         }
@@ -428,7 +437,19 @@
 - (NSNumber *) unhash:(NSString *)currHash
             withAlpha:(NSString *)inAlpha
 {
-    return @0;
+    NSInteger number = 0;
+    NSInteger hashLength = currHash.length;
+    NSInteger alphaLength = inAlpha.length;
+    NSInteger i = 0;
+    for (; i < hashLength; i++) {
+        unichar charToFind = [currHash characterAtIndex:i];
+        NSUInteger position = [inAlpha indexOf:(char)charToFind];
+        if (position == NSNotFound)
+            return nil;
+        number += position * ((NSInteger) pow(alphaLength, (hashLength - i - 1)));
+    }
+    
+    return @(number);
 }
 
 @end
