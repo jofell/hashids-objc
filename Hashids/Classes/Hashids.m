@@ -147,7 +147,7 @@
         
         self.hashSalt = ((salt == nil) ? @"" : salt);
         self.minHashLength = (minLength > 0) ? minLength : 0;
-        self.alphabet = (inAlpha == nil) ? @"xcS4F6h89aUbideAI7tkynuopqrXCgTE5GBKHLMjfRsz" :
+        self.alphabet = (inAlpha == nil) ? @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" :
             inAlpha;
         self.clearData = [NSMutableArray new];
         self.separators = @"";
@@ -199,9 +199,9 @@
 }
 
 #pragma mark -
-#pragma mark Ecrypt functions
+#pragma mark Encode functions
 
-- (NSString *) encrypt:(NSNumber *)firstEntry, ... NS_REQUIRES_NIL_TERMINATION
+- (NSString *) encode:(NSNumber *)firstEntry, ... NS_REQUIRES_NIL_TERMINATION
 {
     [self.clearData removeAllObjects];
     
@@ -407,19 +407,13 @@
 }
 
 #pragma mark -
-#pragma mark Decrypt functions
-
-- (NSArray *) decrypt:(NSString *) encoded
-{
-    if (encoded == nil || encoded.length == 0)
-        return nil;
-    
-    return [self decode:encoded];
-}
-
+#pragma mark Decode functions
 
 - (NSArray *) decode:(NSString *) encoded
 {
+    if (encoded == nil || encoded.length == 0)
+        return nil;
+
     NSArray *parts = [encoded componentsSeparatedByCharactersInSet:
                       [NSCharacterSet characterSetWithCharactersInString:self.guards]];
     NSString *hashid = nil;

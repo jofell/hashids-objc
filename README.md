@@ -49,27 +49,27 @@ Then create an instance of the `Hashids` class.
     
 ```
 
-To encrypt a single integer:
+To encode a single integer:
 
 ```objectivec
     
-    NSString *hash = [hashids encrypt:@123, nil]; // @"AjL"
+    NSString *hash = [hashids encode:@123, nil]; // @"AjL"
     
 ```
 
-Take note that as opposed to other hashids implmentations, you are to use an `NSNumber` instance as parameter for encryption. Also take note that the parameter is `nil` terminated, which means the `encrypt:` call can take an arbitrary number of parameters to it, like so:
+Take note that as opposed to other hashids implmentations, you are to use an `NSNumber` instance as parameter for encoding. Also take note that the parameter is `nil` terminated, which means the `encode:` call can take an arbitrary number of parameters to it, like so:
 
 ```objectivec
     
-    NSString *hash = [hashids encrypt:@123, @456, @789, nil]; // @"qa9t96h7G"
+    NSString *hash = [hashids encode:@123, @456, @789, nil]; // @"qa9t96h7G"
     
 ```
 
-To decrypt an NSString hash:
+To decode an NSString hash:
 
 ```objectivec
     
-    NSArray *ints = [hashids decrypt:@"qa9t96h7G"]; // @[ @123, @456, @789 ]
+    NSArray *ints = [hashids decode:@"qa9t96h7G"]; // @[ @123, @456, @789 ]
     
 ```
 
@@ -96,7 +96,7 @@ In general, you can customise your hashes by providing any of the three paramete
 ```objectivec
     
     Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt 1"];
-    [hasher encrypt:@123, nil]; // @"rnR"
+    [hasher encode:@123, nil]; // @"rnR"
                                          
 ```
 
@@ -105,7 +105,7 @@ The generated hash changes whenever the salt is changed.
 ```objectivec
     
     Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt 2"];
-    [hasher encrypt:@123, nil]; // @"XBn"
+    [hasher encode:@123, nil]; // @"XBn"
                                      
 ```
 
@@ -121,7 +121,7 @@ This is done by passing the minimum hash length to the `init` call. Hashes are p
     
     Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt" 
                                  andMinLength:16];
-    [hasher encrypt:@1, nil]; // @"AA6Fb9iLXiAaBFB5"
+    [hasher encode:@1, nil]; // @"AA6Fb9iLXiAaBFB5"
                                             
 ```
 
@@ -136,7 +136,7 @@ To have only lowercase letters in your hashes, pass in the following custom alph
     Hashids *hasher = [Hashids hashidWithSalt:@"this is my salt" 
                                     minLength:16
                                      andAlpha:@"abcdefghijklmnopqrstuvwxyz"];
-    [hasher encrypt:@123456789, nil]; // @"zdrnoaor"
+    [hasher encode:@123456789, nil]; // @"zdrnoaor"
      
 ```
 
