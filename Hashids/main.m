@@ -16,13 +16,13 @@ int main(int argc, const char * argv[])
         
         Hashids *hashids = [Hashids hashidWithSalt:@"this is my salt"];
         
-        NSString *hash = [hashids encrypt:@1, @2, @3, nil];
+        NSString *hash = [hashids encode:@1, @2, @3, nil];
         NSLog(@"%@", hash);
-        NSLog(@"%@", [hashids decrypt:hash]);
+        NSLog(@"%@", [hashids decode:hash]);
         
         /*
          Output: 
-         eGtrS8
+         laHquq
          (
              1,
              2,

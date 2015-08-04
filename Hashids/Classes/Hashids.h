@@ -37,8 +37,8 @@
          minLength:(NSInteger) minLength
           andAlpha:(NSString *) alphabet;
 
-- (NSString *) encrypt:(NSNumber *)firstEntry, ... NS_REQUIRES_NIL_TERMINATION;
-- (NSArray *) decrypt:(NSString *) encoded;
+- (NSString *) encode:(NSNumber *)firstEntry, ... NS_REQUIRES_NIL_TERMINATION;
+- (NSArray *) decode:(NSString *) encoded;
 
 
 @end
