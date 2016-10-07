@@ -314,7 +314,7 @@ static NSString * const DEFAULT_SALT = @"";
         if(excess > 0){
             int start_pos = excess / 2;
             
-            ret_str = [[ret_str substringWithRange:NSMakeRange(start_pos, start_pos + minHashLength)] mutableCopy];
+            ret_str = [[ret_str substringWithRange:NSMakeRange(start_pos,  minHashLength)] mutableCopy];
         }
     }
     
